@@ -1,0 +1,47 @@
+replicaCount: 1
+
+postgresql:
+  enabled: true
+  primary:
+    replicaCount: 1
+  auth:
+    username: gitea
+    password: giteapassword
+    database: gitea
+
+redis-cluster:
+  enabled: false
+
+postgresql-ha:
+  enabled: false
+
+gitea:
+  admin:
+    username: git
+    password: gitpassword
+    email: git@example.com
+  config:
+    server:
+      ROOT_URL: http://gitea.k8s.orb.local/
+    database:
+      DB_TYPE: postgres
+    cache:
+      ENABLED: false
+    session:
+      PROVIDER: db
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 256m
+  hosts:
+    - host: gitea.k8s.orb.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+persistence:
+  enabled: true
+  storageClass: "local-path"
