@@ -32,9 +32,7 @@ tasks:
         --url={{.URL}} \
         --username={{.USERNAME}} \
         --password={{.PASSWORD}} \
-        --ignore-paths="{{.IGNORE_PATHS}}" \
-        --decryption-provider=sops \
-        --decryption-secret=sops-age
+        --ignore-paths="{{.IGNORE_PATHS}}"
 
   add-ks:
     desc: Add a kustomization to flux
