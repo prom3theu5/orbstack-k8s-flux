@@ -4,6 +4,7 @@ version: "3"
 vars:
   SCRIPTS_DIR: "{{.ROOT_DIR}}/scripts"
   APPS_DIR: "{{.ROOT_DIR}}/apps"
+  HOME_DIR: {sh: "echo $HOME"}
 
 includes:
   orbstack:
