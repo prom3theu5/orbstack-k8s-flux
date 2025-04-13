@@ -36,7 +36,7 @@ tasks:
       echo "🚀 Creating SOPS secret for flux"
       kubectl create secret generic sops-age \
         --namespace=flux-system \
-        --from-file=keys.agekey={{.HOME_DIR}}/.config/sops/age/keys.txt \
+        --from-file=age.agekey={{.HOME_DIR}}/.config/sops/age/keys.txt \
         --dry-run=client -o yaml | kubectl apply -f -
 
       echo "✅ FluxCD deployed"
