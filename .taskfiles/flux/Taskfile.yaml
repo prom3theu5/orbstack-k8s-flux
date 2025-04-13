@@ -32,7 +32,9 @@ tasks:
         --url={{.URL}} \
         --username={{.USERNAME}} \
         --password={{.PASSWORD}} \
-        --ignore-paths="{{.IGNORE_PATHS}}"
+        --ignore-paths="{{.IGNORE_PATHS}}" \
+        --decryption-provider=sops \
+        --decryption-secret=sops-age
 
   add-ks:
     desc: Add a kustomization to flux
@@ -52,6 +54,8 @@ tasks:
               --timeout=5m \
               --prune \
               --interval=15m \
+              --decryption-provider=sops \
+              --decryption-secret=sops-age \
               --export | kubectl apply -f -
 
 
