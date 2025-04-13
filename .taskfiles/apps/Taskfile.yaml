@@ -1,0 +1,96 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  VERSION_FILE: "{{.APPS_DIR}}/versions.yaml"
+
+tasks:
+  cnpg:
+    desc: Deploy CNPG to the cluster.
+    silent: true
+    vars:
+      CNPG_VERSION:
+        sh: yq '.cnpg' {{.VERSION_FILE}}
+    cmd: |
+      echo "🚀 Deploying CNPG version {{.CNPG_VERSION}}..."
+      helm repo add cloudnative-pg https://cloudnative-pg.io/charts/ --force-update
+      helm install cnpg cloudnative-pg/cloudnative-pg \
+        --version {{.CNPG_VERSION}} \
+        -n cnpg \
+        --create-namespace \
+        -f {{.APPS_DIR}}/cnpg/helmvalues.yaml \
+        --wait \
+        --timeout 300s
+      echo "✅ CNPG deployed"
+      
+  postgres:
+    desc: Create a postgres cluster in namespace postgres.
+    silent: true
+    cmd: |
+      kubectl apply -f {{.APPS_DIR}}/cnpg/cluster-local.yaml
+      echo "✅ Cluster created!"
+  
+  gitea:
+    desc: Deploy Gitea to the cluster
+    silent: true
+    vars:
+      GITEA_VERSION:
+        sh: yq '.gitea' {{.VERSION_FILE}}
+    cmd: |
+      echo "🚀 Deploying Gitea version {{.GITEA_VERSION}}..."
+      helm repo add gitea https://dl.gitea.io/charts --force-update
+      helm upgrade --install gitea gitea/gitea \
+        --version {{.GITEA_VERSION}} \
+        -n gitea \
+        --create-namespace \
+        -f {{.APPS_DIR}}/gitea/helmvalues.yaml \
+        --wait \
+        --timeout 300s
+      echo "✅ Gitea deployed"
+      
+  traefik:
+    desc: Deploy Traefik to the cluster
+    silent: true
+    vars:
+      TRAEFIK_VERSION:
+        sh: yq '.traefik' {{.VERSION_FILE}}
+    cmd: |
+      echo "🚀 Deploying Traefik version {{.TRAEFIK_VERSION}}..."
+      helm repo add traefik https://traefik.github.io/charts --force-update
+      helm upgrade --install traefik traefik/traefik \
+        --version {{.TRAEFIK_VERSION}} \
+        -n traefik \
+        --create-namespace \
+        -f {{.APPS_DIR}}/traefik/helmvalues.yaml \
+        --wait \
+        --timeout 300s
+      echo "✅ Traefik deployed"
+
+  flux:
+    desc: Deploy FluxCD to the cluster
+    silent: true
+    vars:
+      FLUX_VERSION:
+        sh: yq '.flux' {{.VERSION_FILE}}
+    cmd: |
+      echo "🚀 Deploying FluxCD version {{.FLUX_VERSION}}..."
+      flux install \
+        --version=v{{.FLUX_VERSION}}
+      
+      echo "🚀 Creating SOPS secret for flux"
+      kubectl create secret generic sops-age \
+        --namespace=flux-system \
+        --from-file=age.agekey={{.HOME_DIR}}/.config/sops/age/keys.txt \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+      echo "✅ FluxCD deployed"
+
+  all:
+    desc: Deploy all apps to the cluster
+    silent: true
+    cmds:
+      - task: traefik
+      - task: cnpg
+      - task: postgres
+      - task: gitea
+      - task: flux

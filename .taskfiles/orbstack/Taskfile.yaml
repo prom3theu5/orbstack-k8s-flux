@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+tasks:
+  hostpath-csi:
+    desc: Deploy hostpath-csi to the cluster. This gives us volume snapshot support locally.
+    silent: true
+    internal: true
+    cmd: |
+      echo "🚀 Deploying HostPath CSI.."
+      kubectl apply -k {{.CORE_DIR}}/hostpath-csi/crds
+      kubectl apply -k {{.CORE_DIR}}/hostpath-csi/snapshot-controller
+      {{.CORE_DIR}}/hostpath-csi/deploy-hostpath.sh
+      CSI_DRIVER_NAME="hostpath.csi.k8s.io"
+      kubectl apply -f - <<EOF
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: csi-hostpath-sc
+      provisioner: ${CSI_DRIVER_NAME}
+      reclaimPolicy: Delete
+      volumeBindingMode: Immediate
+      allowVolumeExpansion: true
+      EOF
+
+      kubectl annotate sc/local-path storageclass.kubernetes.io/is-default-class-
+      kubectl annotate sc/csi-hostpath-sc storageclass.kubernetes.io/is-default-class="true"
+      kubectl annotate volumesnapshotclass/csi-hostpath-snapclass snapshot.storage.kubernetes.io/is-default-class="true"
+      kubectl label nodes --all topology.kubernetes.io/zone=z1
+      echo "✅ HostPath CSI deployed"
+    shell: bash
+    
+  remove-cluster:
+    desc: Reset the orbstack cluster
+    silent: true
+    cmd: |
+      echo "🧼 Deleting Kubernetes cluster in OrbStack..."
+      orb stop k8s || true
+      orb delete k8s -f || true
+
+  start-empty-cluster:
+    desc: Reset the orbstack cluster
+    silent: true
+    internal: true
+    cmd: |
+      echo "🧼 Starting cluster in orb stack..."
+      orb start || true
+      orb start k8s
+      kubectl config use-context orbstack
+      
+      echo "⏳ Waiting for local-path-provisioner to appear..."
+      until kubectl get deployment local-path-provisioner -n kube-system >/dev/null 2>&1; do
+        sleep 1
+      done
+      
+      echo "🧼 Removing local-path-provisioner..."
+      kubectl delete deployment local-path-provisioner -n kube-system
+      echo "✅ Kube API is up"
+
+  reset-cluster:
+    desc: Delete the cluster, then start a new one.
+    cmds:
+      - task: remove-cluster
+      - task: start-empty-cluster
+      - task: hostpath-csi
+
+  new-full-cluster:
+    desc: Setup a fresh cluster, and deploy all apps...
+    cmd: |
+      task orb:reset-cluster
+      task deploy-app:all
+      echo "✅ Cluster running and all apps deployed!"

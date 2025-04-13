@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: postgres
+type: Opaque
+stringData:
+  username: "postgres"
+  password: "SuperSecretPassword123!"
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: orb-local
+  namespace: postgres
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: "enabled"
+    cnpg.io/skipWalArchiving: "enabled"
+spec:
+  primaryUpdateStrategy: unsupervised
+
+  instances: 1
+
+  storage:
+    size: "5Gi"
+
+  superuserSecret:
+    name: postgres-credentials
+
+  enableSuperuserAccess: true
+
+  postgresql:
+    parameters:
+      max_connections: "1024"
+      shared_buffers: "256MB"
+
+  nodeMaintenanceWindow:
+    inProgress: false
+    reusePVC: true
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
+    limits:
+      memory: "2Gi"
+
+  monitoring:
+    enablePodMonitor: false
+
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: gitea
+  namespace: postgres
+spec:
+  databaseReclaimPolicy: delete
+  name: gitea
+  owner: postgres
+  cluster:
+    name: orb-local
+
+  

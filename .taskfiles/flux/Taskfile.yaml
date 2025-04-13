@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+tasks:
+  add-source:
+    desc: Add the git source to flux
+    silent: true
+    vars:
+      NAME: "infra"
+      BRANCH: "main"
+      USERNAME: "git"
+      PASSWORD: "gitpassword"
+      INTERVAL: "15m"
+      TIMEOUT: "5m"
+      IGNORE_PATHS: "/*,!/k8s"
+    requires:
+      vars: 
+        - NAME
+        - BRANCH
+        - USERNAME
+        - PASSWORD
+        - INTERVAL
+        - TIMEOUT
+        - IGNORE_PATHS
+        - URL
+    cmd: |
+      flux create source git {{.NAME}} \
+        --namespace=flux-system \
+        --branch={{.BRANCH}} \
+        --interval={{.INTERVAL}} \
+        --timeout={{.TIMEOUT}} \
+        --url={{.URL}} \
+        --username={{.USERNAME}} \
+        --password={{.PASSWORD}} \
+        --ignore-paths="{{.IGNORE_PATHS}}"
+
+  add-ks:
+    desc: Add a kustomization to flux
+    silent: true
+    vars:
+      SOURCE: "infra"
+    requires:
+      vars: 
+        - NAME
+        - SOURCE_PATH
+        - SOURCE
+    cmd: |
+      flux create kustomization {{.NAME}} \
+        --verbose \
+        --path={{.SOURCE_PATH}} \
+        --source GitRepository/{{.SOURCE}} \
+        --timeout=5m \
+        --prune \
+        --interval=15m \
+        --decryption-provider=sops \
+        --decryption-secret=sops-age \
+        --export | kubectl apply -f -
+
+

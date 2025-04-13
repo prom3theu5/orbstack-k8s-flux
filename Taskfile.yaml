@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  SCRIPTS_DIR: "{{.ROOT_DIR}}/scripts"
+  APPS_DIR: "{{.ROOT_DIR}}/apps"
+  CORE_DIR: "{{.ROOT_DIR}}/core"
+  HOME_DIR: {sh: "echo $HOME"}
+
+includes:
+  orbstack:
+    aliases: ["orb"]
+    taskfile: .taskfiles/orbstack/Taskfile.yaml
+  deploy-app: .taskfiles/apps/Taskfile.yaml
+  flux: .taskfiles/flux/Taskfile.yaml
+
+tasks:
+  default:
+    silent: true
+    cmds: ["task -l"]

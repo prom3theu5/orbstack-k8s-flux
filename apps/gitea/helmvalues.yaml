@@ -1,0 +1,62 @@
+replicaCount: 1
+
+postgresql:
+  enabled: false
+
+valkey-cluster:
+  enabled: false
+
+valkey:
+  enabled: false
+
+postgresql-ha:
+  enabled: false
+
+gitea:
+  admin:
+    username: git
+    password: gitpassword
+    email: git@example.com
+  config:
+    server:
+      ROOT_URL: http://gitea.k8s.orb.local/
+    database:
+      DB_TYPE: postgres
+      HOST: "orb-local-rw.postgres.svc.cluster.local:5432"
+      USER: "postgres"
+      PASSWD: "SuperSecretPassword123!"
+      NAME: gitea
+    cache:
+      ENABLED: false
+    session:
+      PROVIDER: db
+      
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+    
+deployment:
+  env:
+    # Will be automatically defined!
+    - name: GOMAXPROCS
+      valueFrom:
+        resourceFieldRef:
+          divisor: "1" # Is required for GitDevOps systems like ArgoCD/Flux. Otherwise throw the system a diff error. (k8s-default=1)
+          resource: limits.cpu
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: gitea.k8s.orb.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+persistence:
+  enabled: true
+  storageClass: "csi-hostpath-sc"
