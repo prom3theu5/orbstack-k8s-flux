@@ -10,6 +10,7 @@ includes:
     aliases: ["orb"]
     taskfile: .taskfiles/orbstack/Taskfile.yaml
   deploy-app: .taskfiles/apps/Taskfile.yaml
+  flux: .taskfiles/flux/Taskfile.yaml
 
 tasks:
   default:
