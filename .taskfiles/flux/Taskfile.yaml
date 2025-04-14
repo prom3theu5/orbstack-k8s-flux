@@ -46,14 +46,14 @@ tasks:
         - SOURCE
     cmd: |
       flux create kustomization {{.NAME}} \
-              --verbose \
-              --path={{.SOURCE_PATH}} \
-              --source GitRepository/{{.SOURCE}} \
-              --timeout=5m \
-              --prune \
-              --interval=15m \
-              --decryption-provider=sops \
-              --decryption-secret=sops-age \
-              --export | kubectl apply -f -
+        --verbose \
+        --path={{.SOURCE_PATH}} \
+        --source GitRepository/{{.SOURCE}} \
+        --timeout=5m \
+        --prune \
+        --interval=15m \
+        --decryption-provider=sops \
+        --decryption-secret=sops-age \
+        --export | kubectl apply -f -
 
 
