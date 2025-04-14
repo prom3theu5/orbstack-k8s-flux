@@ -40,3 +40,11 @@ tasks:
         --dry-run=client -o yaml | kubectl apply -f -
 
       echo "✅ FluxCD deployed"
+
+  all:
+    desc: Deploy all apps to the cluster
+    silent: true
+    cmds:
+      - task: nginx
+      - task: gitea
+      - task: flux

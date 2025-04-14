@@ -26,3 +26,10 @@ tasks:
     cmds:
       - task: remove-cluster
       - task: start-cluster
+
+  new-full-cluster:
+    desc: Setup a fresh cluster, and deploy all apps...
+    cmd: |
+      task orb:reset-cluster
+      task deploy-app:all
+      echo "✅ Cluster running and all apps deployed!"
