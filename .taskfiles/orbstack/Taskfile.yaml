@@ -18,6 +18,8 @@ tasks:
       echo "🧼 Starting cluster in orb stack..."
       orb start || true
       orb start k8s
+      kubectl config use-context orbstack
+      echo "🧼 Waiting for cluster to be ready..."
       until kubectl get nodes --no-headers | grep -q " Ready"; do sleep 1; done
       echo "✅ Kube API is up"
 
