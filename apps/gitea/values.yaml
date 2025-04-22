@@ -32,10 +32,7 @@ gitea:
 
 ingress:
   enabled: true
-  className: nginx
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/proxy-body-size: 256m
+  className: traefik
   hosts:
     - host: gitea.k8s.orb.local
       paths:
@@ -44,4 +41,4 @@ ingress:
 
 persistence:
   enabled: true
-  storageClass: "local-path"
+  storageClass: "csi-hostpath-sc"

@@ -2,16 +2,6 @@
 version: "3"
 
 tasks:
-  nginx:
-    desc: Deploy nginx to the cluster
-    silent: true
-    cmd: |
-      echo "🌐 Applying ingress-nginx controller..."
-      kubectl apply -f {{.APPS_DIR}}/nginx/nginx.yaml
-      echo "⏳ Waiting for ingress-nginx to be ready..."
-      kubectl wait --for=condition=available deployment/ingress-nginx-controller -n ingress-nginx --timeout=60s || true
-      echo "✅ ingress-nginx controller is ready"
-
   gitea:
     desc: Deploy Gitea to the cluster
     silent: true
@@ -22,6 +12,17 @@ tasks:
         --create-namespace \
         -f {{.APPS_DIR}}/gitea/values.yaml
       echo "✅ Gitea deployed"
+      
+  traefik:
+    desc: Deploy Traefik to the cluster
+    silent: true
+    cmd: |
+      echo "🚀 Deploying Traefik..."
+      helm upgrade --install traefik {{.APPS_DIR}}/traefik/chart \
+        -n kube-system \
+        -f {{.APPS_DIR}}/traefik/values.yaml
+      kubectl apply -k {{.APPS_DIR}}/traefik/dashboard
+      echo "✅ Traefik deployed"
 
   flux:
     desc: Deploy FluxCD to the cluster
@@ -29,7 +30,6 @@ tasks:
     cmd: |
       echo "🚀 Deploying FluxCD..."
       flux install \
-        --components-extra=image-reflector-controller,image-automation-controller \
         --version=v2.5.1 \
         --toleration-keys node-role.kubernetes.io/control-plane
       
@@ -40,11 +40,40 @@ tasks:
         --dry-run=client -o yaml | kubectl apply -f -
 
       echo "✅ FluxCD deployed"
+      
+  hostpath-csi:
+    desc: Deploy hostpath-csi to the cluster. This gives us volume snapshot support locally.
+    silent: true
+    cmd: |
+      echo "🚀 Deploying HostPath CSI.."
+      kubectl apply -k {{.APPS_DIR}}/hostpath-csi/crds
+      kubectl apply -k {{.APPS_DIR}}/hostpath-csi/snapshot-controller
+      {{.APPS_DIR}}/hostpath-csi/deploy-hostpath.sh
+      CSI_DRIVER_NAME="hostpath.csi.k8s.io"
+      kubectl apply -f - <<EOF
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: csi-hostpath-sc
+      provisioner: ${CSI_DRIVER_NAME}
+      reclaimPolicy: Delete
+      volumeBindingMode: Immediate
+      allowVolumeExpansion: true
+      EOF
+      
+      kubectl annotate sc/local-path storageclass.kubernetes.io/is-default-class-
+      kubectl annotate sc/csi-hostpath-sc storageclass.kubernetes.io/is-default-class="true"
+      kubectl annotate volumesnapshotclass/csi-hostpath-snapclass snapshot.storage.kubernetes.io/is-default-class="true"
+      kubectl label nodes --all topology.kubernetes.io/zone=z1
+      kubectl delete deployment local-path-provisioner -n kube-system
+      echo "✅ HostPath CSI deployed"
+    shell: bash
 
   all:
     desc: Deploy all apps to the cluster
     silent: true
     cmds:
-      - task: nginx
+      - task: hostpath-csi
+      - task: traefik
       - task: gitea
       - task: flux
