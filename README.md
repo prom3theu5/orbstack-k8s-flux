@@ -64,8 +64,8 @@ task: Available tasks for this project:
 * deploy-app:all:                  Deploy all apps to the cluster
 * deploy-app:flux:                 Deploy FluxCD to the cluster
 * deploy-app:gitea:                Deploy Gitea to the cluster
-* deploy-app:hostpath-csi:         Deploy hostpath-csi to the cluster. This gives us volume snapshot support locally.
 * deploy-app:traefik:              Deploy Traefik to the cluster
+* deploy-app:cnpg:                 Deploy CNPG postgres operator to the cluster.
 * flux:add-ks:                     Add a kustomization to flux
 * flux:add-source:                 Add the git source to flux
 * orbstack:new-full-cluster:       Setup a fresh cluster, and deploy all apps...      (aliases: orb:new-full-cluster)
@@ -77,7 +77,7 @@ task: Available tasks for this project:
 
 ## Main usage
 
-### Run the new cluster, and provision with traefik, gitea and flux.
+### Run the new cluster, and provision with traefik, cnpg, a database for gitea, gitea - and flux.
 
 ```bash
 task orb:new-full-cluster
