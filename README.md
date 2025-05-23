@@ -1,12 +1,58 @@
-## Setup orbstack local kubernetes cluster as a perfect testbed for flux development / testing
+## Pulse : a local orbstack flux development cluster
+
+[OrbStack](https://docs.orbstack.dev/) is a fast, light, and simple way to run containers and Linux machines.
+It's a supercharged alternative to Docker Desktop and WSL, all in one easy-to-use app.
+
+What's more, it automatically handles https creation for local development, meaning if you apply an ingress controller
+like we apply traefik here, you get automatic https locally, without the need for cert manager.
+
+See more here: [Orbstack https](https://docs.orbstack.dev/features/https)
+
+---
+
+## Deployed Stack info:
 
 Uses Gitea as a local git server.
-
-Username/Password: `git` / `gitpassword`
+```text
+username: git
+password: gitpassword
+```
+Gitea: https://gitea.k8s.orb.local
 
 Traefik dashboard accessible on: https://traefik.k8s.orb.local
 
-Gitea: https://gitea.k8s.orb.local
+Hostpath storage class: `csi-hostpath-sc`.
+
+---
+
+## Prerequisites
+- [Orbstack](https://orbstack.dev/) installed
+- [Task](https://taskfile.dev/) installed
+
+There is a Brewfile which can be used to install all dependencies.
+
+```bash
+brew bundle Brewfile
+```
+
+---
+
+## App Versions
+
+Versions of helm charts used to deploy the baseline apps can be controlled from the `versions.yaml` file in the `apps` directory.
+
+---
+
+## Storage
+
+The default orbstack local-path provisioner is removed automatically, as it doesn't offer snapshot support.
+Instead, we use the [hostpath-csi](https://github.com/kubernetes-csi/csi-driver-host-path) provisioner, which is installed automatically.
+This allows us to use volume snapshots, which is required for testing volsync.
+
+This is set as the default storage class, and volume snapshot class.
+
+The storage class is set to `csi-hostpath-sc`.
+
 
 ---
 
@@ -29,17 +75,17 @@ task: Available tasks for this project:
 
 ---
 
-Main usage:
+## Main usage
+
+### Run the new cluster, and provision with traefik, gitea and flux.
 
 ```bash
 task orb:new-full-cluster
 ```
 
-Run the new cluster, and provision with traefik, gitea, hostpath provisioner (which allows for volsync testing) and flux 2.5.1
+### Fully remove the entire cluster.
 
 ```bash
 taesk orb:remove-cluster
 ```
-
-Fully remove the entire cluster.
 
